@@ -24,3 +24,14 @@ export const signInFormSchema = z.object({
   email: z.string().email("Email invalido"),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
 });
+
+//Schema para hacer sign Up
+export const signUpFormSchema = z.object({
+  name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
+  email: z.string().email("Email invalido"),
+  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+  confirmPassword: z.string().min(6, "La confrimacion de contraseña debe tener al menos 6 caracteres"),
+}).refine((data) => data.password === data.confirmPassword, { //El método .refine en Zod se utiliza para agregar una validación personalizada a un esquema.
+  message: "Las contraseñas no coinciden",
+  path: ["confirmPassword"],
+});
