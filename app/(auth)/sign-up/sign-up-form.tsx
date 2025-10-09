@@ -11,6 +11,7 @@ import { signUpUser } from "@/lib/actions/user.actions";
 import { useSearchParams } from "next/navigation";
 
 
+
 const SignUpForm = () => {
 
     const [data, action] = useActionState(signUpUser,{
@@ -46,7 +47,7 @@ const SignUpForm = () => {
             </div>
              <div className="">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input id="confirmPassword" name="confirmPassword" type="password" required autoComplete="confirmPassword" defaultValue={signUpDefaultValues.password}/>
+                <Input id="confirmPassword" name="confirmPassword" type="password" required  autoComplete="confirmPassword" defaultValue={signUpDefaultValues.password}/>
             </div>
             <div>
                 <SignUpButton />
