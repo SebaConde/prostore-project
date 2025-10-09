@@ -59,7 +59,7 @@ export async function signUpUser(prevState: unknown, formData: FormData){
         if(isRedirectError(error)){
         throw error;
     }
-    return {success:false, message: 'El usuario no fue registrado.'};
+    return {success:false, message: 'El usuario no fue registrado.'}; 
     
         
     }
