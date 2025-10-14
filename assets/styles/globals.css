@@ -1,8 +1,6 @@
-
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
-
 
 @import "tailwindcss/preflight";
 @import "tailwindcss/theme" layer(theme);
@@ -37,6 +35,7 @@
     @apply font-bold text-xl lg:text-2xl;
   }
 }
+
 
 @layer base {
   :root {
@@ -209,7 +208,7 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
