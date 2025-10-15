@@ -16,10 +16,6 @@ const NotFoundPage = () => {
 
         </div>
     </div>
-   
-    
-
-
 );
 }
  
