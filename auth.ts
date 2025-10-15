@@ -88,6 +88,7 @@ export const config = {
       }
       return token;
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     authorized({request, auth}:any){
       //Session cart cookie
       if (!request.cookies.get('sessionCartId')) { //verifica si no hay una cookie de carrito y la crea, de lo contrario devuelve true
