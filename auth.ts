@@ -4,9 +4,6 @@ import { prisma } from "@/db/prisma";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compareSync } from "bcrypt-ts-edge";
 import type { NextAuthConfig } from "next-auth";
-import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
-
 
 export const config = {
   pages: {
@@ -55,64 +52,44 @@ export const config = {
       },
     }),
   ],
-  callbacks:{
+  callbacks: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async session({session, user, trigger, token}: any){
-        //establecer el user id desde el token
-        session.user.id = token.sub;
-        session.user.role = token.role;
-        session.user.name = token.name;
+    async session({ session, user, trigger, token }: any) {
+      //establecer el user id desde el token
+      session.user.id = token.sub;
+      session.user.role = token.role;
+      session.user.name = token.name;
 
-        //si hay una actualizacion, actualizar el session con la info mas reciente de la db
-        if(trigger === "update"){
-            session.user.name = user.name;
-        }
-        return session;
+      //si hay una actualizacion, actualizar el session con la info mas reciente de la db
+      if (trigger === "update") {
+        session.user.name = user.name;
+      }
+      return session;
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async jwt({token,user, trigger, session}:any){
+    async jwt({ token, user, trigger, session }: any) {
       //Asignar los campos del usuario al token
       if (user) {
         token.role = user.role;
 
         //si el usuario no tiene nombre usa la primera parte de mail antes del @
-        if (user.name === 'NO_NAME') {
-          token.name = user.email!.split('@')[0];
+        if (user.name === "NO_NAME") {
+          token.name = user.email!.split("@")[0];
           //Actulizar la DB para mostrar el nombre del token
           await prisma.user.update({
-            where:{id: user.id},
-            data: {name: token.name}
-
-          })
+            where: { id: user.id },
+            data: { name: token.name },
+          });
         }
       }
       return token;
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    authorized({request, auth}:any){
-      //Session cart cookie
-      if (!request.cookies.get('sessionCartId')) { //verifica si no hay una cookie de carrito y la crea, de lo contrario devuelve true
-        //Generar le nueva cookie de carrito.
-        const sessionCartId = crypto.randomUUID();
-        //Clonar los req headers.
-        const newRequestHeaders = new Headers(request.headers);
-        //Crear la new response y agregar los nuevos headers.
-        const response = NextResponse.next({
-          request:{
-            headers: newRequestHeaders
-          }
-        });
-
-        //Set el nuevo id generado de SessionCartId en la cookie de response.
-        response.cookies.set('SessionCartId', sessionCartId);
-        return response;
-
-      } else{
-        return true;
-      }
-    }
+    authorized({ request, auth }: any) {
+      // Solo permitir o denegar acceso, sin lógica de cookies
+      return true;
+    },
   },
-
-} satisfies NextAuthConfig ;
+} satisfies NextAuthConfig;
 
 export const { handlers, auth, signIn, signOut } = NextAuth(config);
