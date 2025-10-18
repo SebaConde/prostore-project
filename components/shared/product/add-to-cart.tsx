@@ -12,7 +12,7 @@ const AddToCart = ({ item }: { item: CartItem }) => {
   const handleAddToCart = async () => {
     const res = await addItemToCart(item);
     
-    if (!res.success) {
+    if (!res?.success) {
       toast.error('Error al agregar al carrito');
     } else {
       toast.success(`${item.name} agregado al carrito`, {
