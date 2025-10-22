@@ -7,7 +7,6 @@ import { prisma } from "@/db/prisma";
 import { cartItemSchema, insertCartSchema } from "../validators";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
-import { success } from "zod";
 
 const calcPrice = (items: CartItem[]) => {
   const itemsPrice = round2(
@@ -73,7 +72,7 @@ export async function addItemToCart(data: CartItem) {
         if (product.stock < existItem.qty + 1) {
           throw new Error (`No hay stock de ${existItem.name}`);
         }
-        //Auemntar la 
+        //Aumentar la cantidad.
         (cart.items as CartItem[]).find((x)=> x.productId === item.productId)!.qty = existItem.qty +1;
       }else{
         //si el item no esta en el carrito.
@@ -128,4 +127,55 @@ export async function getMyCart() {
     totalPrice: cart.totalPrice.toString(),
     shippingPrice: cart.shippingPrice.toString(),
   });
+}
+
+export async function removeItemFromCart(productId:string) {
+  try {
+    const sessionCartId = (await cookies()).get("sessionCartId")?.value;
+    if (!sessionCartId) throw new Error("No se encontro el cart session id");
+
+    //obtener product, mediante el productId que le estoy pasando por parametro
+    const product = await prisma.product.findFirst({
+      where: {id: productId}
+    });
+    if(!product) throw new Error('No se encontro el producto');
+
+    //obtener carrito del usuario
+    const cart = await getMyCart();
+    if(!cart) throw new Error('No se encontro el carrito');
+
+    //Comprobar si el carrito tiene el item que deseo borrar.
+    const exist = (cart.items as CartItem[]).find((x)=> x.productId === productId);
+    if(!exist) throw new Error('El carrito no tiene el producto');
+
+    //Comprobar si tiene uno solo o varios.
+    if (exist.qty ===1) {
+      //Remover del carrito
+      cart.items = (cart.items as CartItem[]).filter((x)=> x.productId !== exist.productId);
+    } else{
+      //Reducir cantidad
+      (cart.items as CartItem[]).find((x) => x.productId === productId)!.qty = exist.qty - 1;
+    }
+    //Update db
+    await prisma.cart.update({
+      where: {id: cart.id},
+      data:{
+        items: cart.items as Prisma.CartUpdateitemsInput[],
+        ...calcPrice(cart.items as CartItem[]),
+      }
+    });
+    //actualziar pagina
+    revalidatePath(`/product/${product.slug}`);
+    return{
+      succes: true,
+      message: `${product.name} fue removido del carrito`,
+    }
+
+
+  } catch (error) {
+    return{
+      succes: false,
+      message: formatError(error)
+    }
+  }
 }
