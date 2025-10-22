@@ -13,9 +13,9 @@ const AddToCart = ({ item }: { item: CartItem }) => {
     const res = await addItemToCart(item);
     
     if (!res?.success) {
-      toast.error('Error al agregar al carrito');
+      toast.error(`${res.message}`);
     } else {
-      toast.success(`${item.name} agregado al carrito`, {
+      toast.success(`${res.message}`, {
         action: {
           label: 'Ver carrito',
           onClick: () => router.push('/cart')
