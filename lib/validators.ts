@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { mime, z } from "zod";
 import { formatPrice } from "./utils";
 
 const currency = z.string().refine((value) => /^\d+(\.\d{2})?$/.test(formatPrice(Number(value))),
@@ -55,5 +55,16 @@ export const insertCartSchema = z.object({
   shippingPrice: currency,
   sessionCartId: z.string().min(1,"Se requiere el Session Cart id"),
   userId: z.string().optional().nullable(),
+});
+
+//Schema para la direccion.
+export const shippingAddressSchema = z.object({
+  fullName: z.string().min(3, 'El nombre debe tener mas de 3 caracteres'),
+  streetAddress: z.string().min(3, 'La direccion debe tener mas de 3 caracteres'),
+  city: z.string().min(3, 'La ciudad debe tener mas de 3 caracteres'),
+  postalCode: z.string().min(3, 'Codigo postal debe tener mas de 3 caracteres'),
+  country: z.string().min(3, 'El pais debe tener mas de 3 caracteres'),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
   
 })

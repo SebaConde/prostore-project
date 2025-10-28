@@ -13,3 +13,11 @@ export const signUpDefaultValues = {
     password:'',
     confirmPasword: ''
 } 
+
+export const shippingAddressDefaultValues = {
+    fullName: 'Seba Conde',
+    streetAddress: 'Varela 327',
+    city: 'Salto',
+    postalCode: '124566',
+    conuntry: 'Uruguay',
+}

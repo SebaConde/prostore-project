@@ -42,7 +42,23 @@ if (typeof value ==='number') {
   return Math.round((Number(value) + Number.EPSILON) * 100) /100;
 }else{
   throw new Error("El valor no es un numero o string");
-  
 }
 
+}
+
+const CURRENCY_FORMATTER = new Intl.NumberFormat('en-US',{
+  currency:'USD',
+  style: 'currency',
+  maximumFractionDigits: 2
+});
+
+//Formatear usando la funcion.
+export function formatCurrency(amount: number | string | null){
+  if (typeof amount === 'number') {
+    return CURRENCY_FORMATTER.format(amount);
+  }else if (typeof amount === 'string') {
+    return CURRENCY_FORMATTER.format(Number(amount));
+  } else{
+    return 'Nan';
+  }
 }
