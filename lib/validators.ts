@@ -66,5 +66,4 @@ export const shippingAddressSchema = z.object({
   country: z.string().min(3, 'El pais debe tener mas de 3 caracteres'),
   lat: z.number().optional(),
   lng: z.number().optional(),
-  
 })
