@@ -5,6 +5,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { compareSync } from "bcrypt-ts-edge";
 import type { NextAuthConfig } from "next-auth";
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 export const config = {
   pages: {
@@ -112,11 +113,51 @@ export const config = {
       }
       return token;
     },
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     authorized({ request, auth }: any) {
-      // Solo permitir o denegar acceso, sin lógica de cookies
-      return true;
-    },
+  // Array con las rutas que queremos proteger.
+  const protectedPaths = [
+    /\/shipping-address/,
+    /\/payment-method/,
+    /\/place-order/,
+    /\/profile/,
+    /\/user\/(.*)/,
+    /\/order\/(.*)/,
+    /\/admin/,
+  ];
+  
+  // Obtener el pathname del url
+  const { pathname } = request.nextUrl;
+  
+  // Checkear si la ruta actual es una ruta protegida
+  const isProtectedPath = protectedPaths.some((p) => p.test(pathname));
+  
+  // Si es una ruta protegida y NO está autenticado, denegar acceso
+  if (isProtectedPath && !auth) {
+    const loginUrl = new URL("/sign-in", request.nextUrl.origin);
+    return NextResponse.redirect(loginUrl);
+  }
+  
+  // Lógica del carrito (solo si está autenticado o no es ruta protegida)
+  if (!request.cookies.get('sessionCartId')) {
+    const sessionCartId = crypto.randomUUID();
+    const newRequestHeaders = new Headers(request.headers);
+    
+    const response = NextResponse.next({
+      request: {
+        headers: newRequestHeaders,
+      },
+    });
+    
+    response.cookies.set('sessionCartId', sessionCartId);
+    return response; // Retornar el response con la cookie
+  }
+  
+  // Permitir acceso
+  return true;
+},
+    
   },
 } satisfies NextAuthConfig;
 
