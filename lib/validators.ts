@@ -1,5 +1,6 @@
-import { mime, z } from "zod";
+import { z } from "zod";
 import { formatPrice } from "./utils";
+import { PAYMENT_METHODS } from "./constants";
 
 const currency = z.string().refine((value) => /^\d+(\.\d{2})?$/.test(formatPrice(Number(value))),
     "Precio debe tener dos lugares despues de la ,"
@@ -66,4 +67,12 @@ export const shippingAddressSchema = z.object({
   country: z.string().min(3, 'El pais debe tener mas de 3 caracteres'),
   lat: z.number().optional(),
   lng: z.number().optional(),
+})
+
+//Schema para el metodo de pago.
+export const paymentMethodSchema= z.object({
+  type: z.string().min(1, 'Se requiere un metodo de pago')
+}).refine((data)=>PAYMENT_METHODS.includes(data.type),{
+  path:['type'],
+  message:'Metodo de pago invalido'
 })

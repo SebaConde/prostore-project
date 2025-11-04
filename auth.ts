@@ -131,7 +131,7 @@ export const config = {
   const { pathname } = request.nextUrl;
   
   // Checkear si la ruta actual es una ruta protegida
-  const isProtectedPath = protectedPaths.some((p) => p.test(pathname));
+  const isProtectedPath = protectedPaths.some((p) => p.test(pathname)); 
   
   // Si es una ruta protegida y NO está autenticado, denegar acceso
   if (isProtectedPath && !auth) {
