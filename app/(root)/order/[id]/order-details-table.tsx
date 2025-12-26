@@ -2,14 +2,24 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {Table,TableBody,TableCell,TableHead,TableHeader,TableRow} from "@/components/ui/table";
 import { formatCurrency, formatDateTime, formatId } from "@/lib/utils";
 import { Order } from "@/types";
 import Link from "next/link";
-import Image from 'next/image'
+import Image from "next/image";
 import PlaceOrderForm from "../../place-order/place-order-form";
+import {PayPalButtons,PayPalScriptProvider,usePayPalScriptReducer} from "@paypal/react-paypal-js";
+import {createPaypalOrder,approvePaypalOrder} from "@/lib/actions/order.actions";
+import { toast } from "sonner";
 
-const OrderDetailsTable = ({ order }: { order: Order }) => {
+
+const OrderDetailsTable = ({
+  order,
+  paypalClientId,
+}: {
+  order: Order;
+  paypalClientId: string;
+}) => {
   const {
     id,
     shippingAddres,
@@ -23,6 +33,39 @@ const OrderDetailsTable = ({ order }: { order: Order }) => {
     paidAt,
     deliveredAt,
   } = order;
+
+  const PrintLoadingState = () =>{
+    const [ {isPending, isRejected}] = usePayPalScriptReducer();
+    let status = '';
+
+    if(isPending){
+      status = 'loading paypal..'
+    }else if(isRejected){
+      status = 'error cargando payapal'
+    }
+    return status;
+  };
+
+  const handleCreatePaypalOrder = async ()=>{
+    const res = await createPaypalOrder(order.id);
+    
+    if(!res.success){
+     toast.warning(res.message)
+    }
+    return res.data;
+  }
+  
+  const handleApprovePaypalOrder = async (data: {orderID: string})=>{
+    const res = await approvePaypalOrder(order.id, data);
+    console.log('Frontend - orderID recibido:', data.orderID); // ← Agrega esto
+
+    if(res.success){
+      toast.success(res.message);
+    }else{
+      toast.error(res.message);
+    }
+  }
+
   return (
     <>
       <h1 className="py-4 text-2xl">Order {formatId(id)}</h1>
@@ -102,24 +145,32 @@ const OrderDetailsTable = ({ order }: { order: Order }) => {
           </Card>
         </div>
         <div>
-                <Card>
-                    <CardContent className="p-4 gap-4 space-y-4">
-                        <div className="flex justify-between">
-                            <div>Items</div>
-                            <div>{formatCurrency(itemsPrice)}</div>
-                        </div>
-                        <div className="flex justify-between">
-                            <div>Shipping</div>
-                            <div>{formatCurrency(shippingPrice)}</div>
-                        </div>
-                        <div className="flex justify-between">
-                            <div>Total</div>
-                            <div>{formatCurrency(totalPrice)}</div>
-                        </div>
-                        <PlaceOrderForm />
-                    </CardContent>
-                </Card>
-            </div>
+          <Card>
+            <CardContent className="p-4 gap-4 space-y-4">
+              <div className="flex justify-between">
+                <div>Items</div>
+                <div>{formatCurrency(itemsPrice)}</div>
+              </div>
+              <div className="flex justify-between">
+                <div>Shipping</div>
+                <div>{formatCurrency(shippingPrice)}</div>
+              </div>
+              <div className="flex justify-between">
+                <div>Total</div>
+                <div>{formatCurrency(totalPrice)}</div>
+              </div>
+              <PlaceOrderForm />
+            {!isPaid && paymentMethod == 'Paypal' && (
+              <div>
+                <PayPalScriptProvider  options={{clientId: paypalClientId}}>
+                  <PrintLoadingState />
+                  <PayPalButtons createOrder={handleCreatePaypalOrder} onApprove={handleApprovePaypalOrder}  />
+                </PayPalScriptProvider>
+              </div>
+            )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </>
   );

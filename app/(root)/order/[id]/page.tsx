@@ -21,7 +21,9 @@ const OrderDetailsPage = async (props: {
     <OrderDetailsTable order={{
       ...order,
       shippingAddres: order.shippingAddres as ShippingAddress
-    }}/>
+    }}
+    paypalClientId={process.env.PAYPAL_CLIENT_ID || 'sb' }
+    />
   );
 };
 
