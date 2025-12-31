@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import qs from "query-string";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -24,86 +25,88 @@ export function formatError(error: any) {
   if (error?.issues && Array.isArray(error.issues)) {
     // Zod error - los errores están en error.issues
     const fieldErrors = error.issues.map((issue: any) => issue.message);
-    return fieldErrors.join('. ');
-  } else if (error?.name === 'PrismaClientKnownRequestError' && error.code === 'P2002') {
+    return fieldErrors.join(". ");
+  } else if (
+    error?.name === "PrismaClientKnownRequestError" &&
+    error.code === "P2002"
+  ) {
     // Prisma error
-    const field = error.meta?.target ? error.meta.target[0] : 'Field';
+    const field = error.meta?.target ? error.meta.target[0] : "Field";
     return `Ya existe ese ${field.charAt(0).toUpperCase() + field.slice(1)}`;
   } else {
     // Otros errores
-    return typeof error?.message === 'string' 
-      ? error.message 
-      : error 
-        ? JSON.stringify(error) 
-        : 'Error desconocido';
+    return typeof error?.message === "string"
+      ? error.message
+      : error
+      ? JSON.stringify(error)
+      : "Error desconocido";
   }
 }
 
 //Redondear el numero a 2 lugares despues de la coma.
-export function round2(value: number | string){
-if (typeof value ==='number') {
-  return Math.round((value + Number.EPSILON) * 100) /100;
-} else if (typeof value === 'string'){ 
-  return Math.round((Number(value) + Number.EPSILON) * 100) /100;
-}else{
-  throw new Error("El valor no es un numero o string");
+export function round2(value: number | string) {
+  if (typeof value === "number") {
+    return Math.round((value + Number.EPSILON) * 100) / 100;
+  } else if (typeof value === "string") {
+    return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+  } else {
+    throw new Error("El valor no es un numero o string");
+  }
 }
 
-}
-
-const CURRENCY_FORMATTER = new Intl.NumberFormat('en-US',{
-  currency:'USD',
-  style: 'currency',
-  maximumFractionDigits: 2
+const CURRENCY_FORMATTER = new Intl.NumberFormat("en-US", {
+  currency: "USD",
+  style: "currency",
+  maximumFractionDigits: 2,
 });
 
 //Formatear usando la funcion.
-export function formatCurrency(amount: number | string | null){
-  if (typeof amount === 'number') {
+export function formatCurrency(amount: number | string | null) {
+  if (typeof amount === "number") {
     return CURRENCY_FORMATTER.format(amount);
-  }else if (typeof amount === 'string') {
+  } else if (typeof amount === "string") {
     return CURRENCY_FORMATTER.format(Number(amount));
-  } else{
-    return 'Nan';
+  } else {
+    return "Nan";
   }
 }
 
 //Acortar UUID
-export function formatId(id:string){
-  return `..${id.substring(id.length-6)}`;
+export function formatId(id: string) {
+  return `..${id.substring(id.length - 6)}`;
 }
 
 //Formatear la fecha.
 export const formatDateTime = (dateString: Date) => {
   const dateTimeOptions: Intl.DateTimeFormatOptions = {
-    month: 'short', // abbreviated month name (e.g., 'Oct')
-    year: 'numeric', // abbreviated month name (e.g., 'Oct')
-    day: 'numeric', // numeric day of the month (e.g., '25')
-    hour: 'numeric', // numeric hour (e.g., '8')
-    minute: 'numeric', // numeric minute (e.g., '30')
+    month: "short", // abbreviated month name (e.g., 'Oct')
+    year: "numeric", // abbreviated month name (e.g., 'Oct')
+    day: "numeric", // numeric day of the month (e.g., '25')
+    hour: "numeric", // numeric hour (e.g., '8')
+    minute: "numeric", // numeric minute (e.g., '30')
     hour12: true, // use 12-hour clock (true) or 24-hour clock (false)
   };
   const dateOptions: Intl.DateTimeFormatOptions = {
-    weekday: 'short', // abbreviated weekday name (e.g., 'Mon')
-    month: 'short', // abbreviated month name (e.g., 'Oct')
-    year: 'numeric', // numeric year (e.g., '2023')
-    day: 'numeric', // numeric day of the month (e.g., '25')
+    weekday: "short", // abbreviated weekday name (e.g., 'Mon')
+    month: "short", // abbreviated month name (e.g., 'Oct')
+    year: "numeric", // numeric year (e.g., '2023')
+    day: "numeric", // numeric day of the month (e.g., '25')
   };
   const timeOptions: Intl.DateTimeFormatOptions = {
-    hour: 'numeric', // numeric hour (e.g., '8')
-    minute: 'numeric', // numeric minute (e.g., '30')
+    hour: "numeric", // numeric hour (e.g., '8')
+    minute: "numeric", // numeric minute (e.g., '30')
     hour12: true, // use 12-hour clock (true) or 24-hour clock (false)
   };
   const formattedDateTime: string = new Date(dateString).toLocaleString(
-    'en-US',
+    "en-US",
     dateTimeOptions
   );
   const formattedDate: string = new Date(dateString).toLocaleString(
-    'en-US',
+    "en-US",
     dateOptions
   );
   const formattedTime: string = new Date(dateString).toLocaleString(
-    'en-US',
+    "en-US",
     timeOptions
   );
   return {
@@ -112,3 +115,25 @@ export const formatDateTime = (dateString: Date) => {
     timeOnly: formattedTime,
   };
 };
+
+//Links de paginacion.
+export function formUrlQuery({
+  params,
+  key,
+  value,
+}: {
+  params: string;
+  key: string;
+  value: string | null;
+}) {
+  const query = qs.parse(params);
+  query[key] = value;
+
+  return qs.stringifyUrl(
+    {
+      url: window.location.pathname,
+      query,
+    },
+    { skipNull: true }
+  );
+}

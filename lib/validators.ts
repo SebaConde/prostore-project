@@ -115,9 +115,16 @@ export const insertOrderItemSchema = z.object({
   qty: z.number(),
 });
 
+//Schema para el PaymentResult
 export const paymentResultSchema = z.object({
   id: z.string(),
   status: z.string(),
   email_address: z.string(),
   pricePaid: z.string(),
+});
+
+//Schema para actualizar el perfil del usuario
+export const updateProfileSchema = z.object({
+  name: z.string().min(3, "El nombre debe tener minimo 3 caracteres"),
+  email: z.email().min(3, "El email debe tener minimo 3 caracteres"),
 });

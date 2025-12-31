@@ -122,3 +122,30 @@ export async function updateUserPaymentMethod(data: z.infer<typeof paymentMethod
         return{success: false, message: formatError(error)}
     }
 }
+
+//Actualizar perfil del usuario
+export async function updateProfile(user: {name:string, email:string}){
+    try {
+        const session = await auth();
+        const currentUser = await prisma.user.findFirst({
+    where:{
+        id: session?.user?.id
+    }});
+     if(!currentUser) throw new Error ('Error de usuario');
+
+     await prisma.user.update({
+        where:{
+            id: currentUser.id
+        },
+        data:{
+            name: user.name
+        }
+     });
+     return{
+        success: true,
+        message: 'Nombre de usuario actualizado correctamente',
+     }
+    } catch (error) {
+        return {success: false, message: formatError(error)}
+    }
+}
