@@ -10,7 +10,7 @@ import { CartItem, PaymentResult } from "@/types";
 import { paypal } from "../paypal";
 import { revalidatePath } from "next/cache";
 import { PAGE_SIZE } from "../constants";
-
+import { Prisma } from "@prisma/client";
 
 //Create order and order items.
 export async function createOrder() {
@@ -154,7 +154,7 @@ export async function approvePaypalOrder(
 ) {
   try {
     const order = await prisma.order.findFirst({
-      where: {id: orderId},
+      where: { id: orderId },
     });
 
     if (!order) throw new Error("No se encontro la orden");
@@ -241,26 +241,65 @@ async function updateOrderToPaid({
 //Obtener las ordenes de usuarios
 export async function getMyOrders({
   limit = PAGE_SIZE,
-  page 
-}:{
-  limit?:number;
-  page: number
-}){
+  page,
+}: {
+  limit?: number;
+  page: number;
+}) {
   const session = await auth();
-  if(!session) throw new Error ('Usuario no autorizado');
+  if (!session) throw new Error("Usuario no autorizado");
 
   const data = await prisma.order.findMany({
-    where:{userId: session?.user?.id},
-    orderBy: {createdAt: 'desc'},
-    take:limit,
-    skip: (page -1) * limit
+    where: { userId: session?.user?.id },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    skip: (page - 1) * limit,
   });
 
-  const dataCount =await prisma.order.count({
-    where:{userId: session?.user?.id}
+  const dataCount = await prisma.order.count({
+    where: { userId: session?.user?.id },
   });
 
-  return{
-    data,totalPages:Math.ceil(dataCount / limit)
-  }
+  return {
+    data,
+    totalPages: Math.ceil(dataCount / limit),
+  };
+}
+
+type salesDataType = {
+  month: string;
+  totalSales: number;
+}[];
+
+//Obtener data de las ordenes y resumen de ordenes.
+export async function getOrderSummary() {
+  const ordersCount = await prisma.order.count();
+  const productsCount = await prisma.product.count();
+  const usersCount = await prisma.user.count();
+
+  //obtener ventas totales
+  const totalSales = await prisma.order.aggregate({
+    _sum: { totalPrice: true },
+  });
+
+  //obtener ventas mensuales
+  const salesDataRaw = await prisma.$queryRaw<
+    Array<{ month: string; totalSales: Prisma.Decimal }>
+  >`SELECT to_char("createdAt", 'MM/YY') as "month", sum("totalPrice") as "totalSales" FROM "Order" GROUP BY to_char("createdAt", 'MM/YY')`;
+
+  const salesData: salesDataType = salesDataRaw.map((sale) => ({
+    month: sale.month,
+    totalSales: Number(sale.totalSales),
+  }));
+
+  //Obtener ultimas ventas
+  const latestSales = await prisma.order.findMany({
+    orderBy: { createdAt: "desc" },
+    include: { user: { select: { name: true } } },
+    take: 6,
+  });
+
+  return {
+    ordersCount, productsCount, usersCount, totalSales, latestSales, salesData
+  };
 }
