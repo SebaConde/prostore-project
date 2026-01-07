@@ -7,12 +7,16 @@ import { BadgeDollarSign, Barcode, CreditCard, Users } from "lucide-react";
 import { Metadata } from "next";
 import Link from "next/link";
 import Charts from "./charts";
+import { requiereAdmin } from "@/lib/auth-guard";
 
 export const metadata: Metadata = {
   title: "admin dashboard",
 };
 
 const AdminOverviewPage = async () => {
+
+  await requiereAdmin();
+
   const session = await auth();
 
   if (session?.user.role !== "admin") {
