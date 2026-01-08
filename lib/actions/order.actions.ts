@@ -194,7 +194,7 @@ async function updateOrderToPaid({
   paymentResult,
 }: {
   orderId: string;
-  paymentResult: PaymentResult;
+  paymentResult?: PaymentResult;
 }) {
   const order = await prisma.order.findFirst({
     where: { id: orderId },
@@ -325,4 +325,62 @@ return{
   totalPages : Math.ceil(dataCount / limit)
 }
 
+}
+
+//Borrar una orden.
+export async function deleteOrder(id:string){
+  try {
+    await prisma.order.delete({
+      where:{id}
+    });
+    revalidatePath('/admin/orders');
+    return{
+      success:true,
+      message: 'Orden eliminada correctamente'
+    }
+  } catch (error) {
+    return {success:false, message: formatError(error)}
+  }
+}
+
+//Actualizar orden COD a paga.
+export async function updateOrderToPaidCOD(orderId:string){
+  try {
+    await updateOrderToPaid({orderId});
+    revalidatePath(`/orders/${orderId}`);
+
+    return {success:true, message:'Orden marcada como paga.'}
+  } catch (error) {
+    return{success:false, message: formatError(error)}
+  }
+}
+
+//Actualizar COD a entregado.
+export async function deliverOrder(orderId: string) {
+  try {
+    const order = await prisma.order.findFirst({
+      where:{
+        id:orderId,
+      },
+    });
+    if(!order) throw new Error('no se pudo encontrar la orden');
+    if(!order.isPaid) throw new Error('la orden no fue pagada.');
+
+    await prisma.order.update({
+      where :{
+        id:orderId},
+        data:{
+          isDelivered:true,
+          deliveredAt: new Date(),
+        },
+    });
+    revalidatePath(`/order/${orderId}`);
+
+    return{
+      success:true,
+      message: 'orden marcada como entregada.'
+    }
+  } catch (error) {
+    return{success:false, message: formatError(error)}
+  }
 }
