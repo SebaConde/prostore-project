@@ -3,7 +3,6 @@ import { getOrderById } from "@/lib/actions/order.actions";
 import { notFound } from "next/navigation";
 import { ShippingAddress } from "@/types";
 import OrderDetailsTable from "./order-details-table";
-import { requiereAdmin } from "@/lib/auth-guard";
 import { auth } from "@/auth";
 
 
@@ -19,7 +18,6 @@ const OrderDetailsPage = async (props: {
   const { id } = await props.params;
   const order = await getOrderById(id);
   if(!order) notFound();
-  await requiereAdmin();
 
   const session = await auth();
   return (

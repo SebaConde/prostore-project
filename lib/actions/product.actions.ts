@@ -1,69 +1,117 @@
-'use server';
+"use server";
 
-import { prisma } from "@/db/prisma"; 
+import { prisma } from "@/db/prisma";
 import { convertToPlainObject, formatError } from "../utils";
 import { LATEST_PRODUCTS_LIMIT, PAGE_SIZE } from "../constants";
 import { revalidatePath } from "next/cache";
+import z from "zod";
+import { insertProductSchema, updateProductSchema } from "../validators";
 
 //Get latest products.
 //Devuelve un obj Primsa y hay que convertirlo en un obj JS.
 export async function getLatestProducts() {
+  const data = await prisma.product.findMany({
+    take: LATEST_PRODUCTS_LIMIT,
+    orderBy: { createdAt: "desc" },
+  });
 
-    const data = await prisma.product.findMany({
-        take: LATEST_PRODUCTS_LIMIT,
-        orderBy:{createdAt:'desc'},
-    });
-
-    return convertToPlainObject(data);
+  return convertToPlainObject(data);
 }
 
 //Obtener un producto por slug.
-export async function getProductBySlug(slug: string){
-    return await prisma.product.findFirst({
-        where: {slug:slug}
-    });
+export async function getProductBySlug(slug: string) {
+  return await prisma.product.findFirst({
+    where: { slug: slug },
+  });
+}
+
+//Obtener un producto por id.
+export async function getProductById(productId: string) {
+  const data = await prisma.product.findFirst({
+    where: { id: productId },
+  });
+
+  return convertToPlainObject(data);  //para que devuelva un obj js y no un obj prisma.
 }
 
 //Obtener todos los productos.
 export async function getAllProducts({
-    query,
-    limit = PAGE_SIZE,
-    page,
-    category
-}:{
-    query: string,
-    limit?: number,
-    page: number,
-    category?: string
-}){
-    const data = await prisma.product.findMany({
-        skip:(page-1) * limit,
-        take:limit
-    });
-    const dataCount = await prisma.product.count();
+  query,
+  limit = PAGE_SIZE,
+  page,
+  category,
+}: {
+  query: string;
+  limit?: number;
+  page: number;
+  category?: string;
+}) {
+  const data = await prisma.product.findMany({
+    orderBy: {createdAt: 'desc'},
+    skip: (page - 1) * limit,
+    take: limit,
+  });
+  const dataCount = await prisma.product.count();
 
-    return{
-        data,
-        totalPages: Math.ceil(dataCount / limit),
-    }
+  return {
+    data,
+    totalPages: Math.ceil(dataCount / limit),
+  };
 }
 
 //Borrar productos.
-export async function deleteProduct(id:string) {
+export async function deleteProduct(id: string) {
+  try {
+    const productExist = await prisma.product.findFirst({
+      where: { id },
+    });
+    if (!productExist) {
+      throw new Error("no se encuentra el producto");
+    }
+    await prisma.product.delete({
+      where: { id },
+    });
+    revalidatePath("/admin/products");
+    return {
+      success: true,
+      message: "Producto removido con exito.",
+    };
+  } catch (error) {
+    return { success: false, message: formatError(error) };
+  }
+}
+
+//Crear un nuevo producto.
+export async function createProduct(data: z.infer<typeof insertProductSchema>) {
+  try {
+    const product = insertProductSchema.parse(data);
+    await prisma.product.create({ data: product });
+    revalidatePath("/admin/products");
+    return { success: true, message: "Producto argegado con exito." };
+  } catch (error) {
+    return { success: false, message: formatError(error) };
+  }
+}
+
+//Actualizar un producto.
+export async function updateProduct(data: z.infer<typeof updateProductSchema>){
     try {
-        const productExist = await prisma.product.findFirst({
-            where:{id}
+        const product = updateProductSchema.parse(data);
+        const productExists = await prisma.product.findFirst({
+            where:{id: product.id}
         });
-        if (!productExist) {
-            throw new Error('no se encuentra el producto');
-        }
-        await prisma.product.delete({
-            where:{id}
+        if(!productExists) throw new Error('producto no existe');
+    
+        await prisma.product.update({
+            where:{id:product.id},
+            data: product,
         });
-        revalidatePath('/admin/products');
+        revalidatePath('/admin/products')
+
         return{
-            success:true, message: 'Producto removido con exito.'
-        };
+            success:true,
+            message: 'Producto actualizado correctamente.'
+        }
     } catch (error) {
         return{success:false, message: formatError(error)}
     }

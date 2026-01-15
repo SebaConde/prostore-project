@@ -9,20 +9,23 @@ const currency = z
     "Precio debe tener dos lugares despues de la ,"
   );
 
-//Schema for inserting products
+//Schema para agregar productos
 export const insertProductSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
   slug: z.string().min(3, "El slug debe tener al menos 3 caracteres"),
   category: z.string().min(3, "El category debe tener al menos 3 caracteres"),
   brand: z.string().min(3, "El brand debe tener al menos 3 caracteres"),
-  description: z
-    .string()
-    .min(3, "El description debe tener al menos 3 caracteres"),
+  description: z.string().min(3, "El description debe tener al menos 3 caracteres"),
   stock: z.coerce.number(),
-  images: z.array(z.string()).min(3, "Tiene que tener al menos una imagen."),
+  images: z.array(z.string()).min(1, "Tiene que tener al menos una imagen."),
   isFeatured: z.boolean(),
   banner: z.string().nullable(),
   price: currency,
+});
+
+//Schema para actualizar productos
+export const updateProductSchema = insertProductSchema.extend({
+  id: z.string().min(1, 'Se requiere el id'),
 });
 
 //Schema para hacer signIn
