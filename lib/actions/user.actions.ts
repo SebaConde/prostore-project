@@ -174,7 +174,7 @@ export async function getAllUsers({
 //Borrar un usuario
 export async function deleteUser(id: string){
     try {
-        await prisma.user.delete({where:{id}});
+        await prisma.user.delete({where:{id: id}});
 
         revalidatePath('/admin/users');
         return {success: true, message:'Usuario eliminado con exito'}
