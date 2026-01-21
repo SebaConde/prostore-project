@@ -6,6 +6,7 @@ import { LATEST_PRODUCTS_LIMIT, PAGE_SIZE } from "../constants";
 import { revalidatePath } from "next/cache";
 import z from "zod";
 import { insertProductSchema, updateProductSchema } from "../validators";
+import { Prisma } from "@prisma/client";
 
 //Get latest products.
 //Devuelve un obj Primsa y hay que convertirlo en un obj JS.
@@ -46,7 +47,19 @@ export async function getAllProducts({
   page: number;
   category?: string;
 }) {
+  const queryFilter: Prisma.ProductWhereInput = query && query!== 'all' ? {
+            name:{
+              contains:query,
+              mode: 'insensitive'
+            } as Prisma.StringFilter
+          
+        } : {};
+
+
   const data = await prisma.product.findMany({
+    where:{
+      ...queryFilter
+    },
     orderBy: {createdAt: 'desc'},
     skip: (page - 1) * limit,
     take: limit,
@@ -115,4 +128,25 @@ export async function updateProduct(data: z.infer<typeof updateProductSchema>){
     } catch (error) {
         return{success:false, message: formatError(error)}
     }
+}
+
+//Obtener todas las categorias.
+export async function getAllCategories(){
+  const data = await prisma.product.groupBy({
+    by:['category'],
+    _count: true
+  });
+
+  return data;
+}
+
+//Obtener productos destacados.
+export async function getFeaturedProducts(){
+  const data = await prisma.product.findMany({
+    where:{isFeatured:true},
+    orderBy: {createdAt: 'desc'},
+    take: 4
+  });
+
+  return convertToPlainObject(data);
 }
