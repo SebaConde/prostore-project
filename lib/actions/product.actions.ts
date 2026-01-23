@@ -32,7 +32,7 @@ export async function getProductById(productId: string) {
     where: { id: productId },
   });
 
-  return convertToPlainObject(data);  //para que devuelva un obj js y no un obj prisma.
+  return convertToPlainObject(data); //para que devuelva un obj js y no un obj prisma.
 }
 
 //Obtener todos los productos.
@@ -41,26 +41,57 @@ export async function getAllProducts({
   limit = PAGE_SIZE,
   page,
   category,
+  price,
+  rating,
+  sort,
 }: {
   query: string;
   limit?: number;
   page: number;
   category?: string;
+  price?: string;
+  rating?: string;
+  sort?: string;
 }) {
-  const queryFilter: Prisma.ProductWhereInput = query && query!== 'all' ? {
-            name:{
-              contains:query,
-              mode: 'insensitive'
-            } as Prisma.StringFilter
-          
-        } : {};
+  //Query filter
+  const queryFilter: Prisma.ProductWhereInput =
+    query && query !== "all"
+      ? {
+          name: {
+            contains: query,
+            mode: "insensitive",
+          } as Prisma.StringFilter,
+        }
+      : {};
 
+  //Category filter
+  const categoryFilter = category && category !== "all" ? { category } : {};
 
+  //Price filter
+  const priceFilter: Prisma.ProductWhereInput =
+    price && price !== "all"
+      ? {
+          price: {
+            gte: Number(price.split("-")[0]),
+            lte: Number(price.split("-")[1]),
+          },
+        }
+      : {};
+
+      //Rating filter.
+      const ratingFilter = rating && rating !== 'all' ? {
+        rating: {
+          gte: Number(rating),
+        }
+      } :{};
   const data = await prisma.product.findMany({
-    where:{
-      ...queryFilter
+    where: {
+      ...queryFilter,
+      ...categoryFilter,
+      ...priceFilter,
+      ...ratingFilter,
     },
-    orderBy: {createdAt: 'desc'},
+    orderBy: sort === 'lowest' ? {price: 'asc'} : sort === 'highest' ? {price: 'desc'} : sort === 'rating' ? {rating: 'desc'} : {createdAt: 'desc'},
     skip: (page - 1) * limit,
     take: limit,
   });
@@ -107,45 +138,45 @@ export async function createProduct(data: z.infer<typeof insertProductSchema>) {
 }
 
 //Actualizar un producto.
-export async function updateProduct(data: z.infer<typeof updateProductSchema>){
-    try {
-        const product = updateProductSchema.parse(data);
-        const productExists = await prisma.product.findFirst({
-            where:{id: product.id}
-        });
-        if(!productExists) throw new Error('producto no existe');
-    
-        await prisma.product.update({
-            where:{id:product.id},
-            data: product,
-        });
-        revalidatePath('/admin/products')
+export async function updateProduct(data: z.infer<typeof updateProductSchema>) {
+  try {
+    const product = updateProductSchema.parse(data);
+    const productExists = await prisma.product.findFirst({
+      where: { id: product.id },
+    });
+    if (!productExists) throw new Error("producto no existe");
 
-        return{
-            success:true,
-            message: 'Producto actualizado correctamente.'
-        }
-    } catch (error) {
-        return{success:false, message: formatError(error)}
-    }
+    await prisma.product.update({
+      where: { id: product.id },
+      data: product,
+    });
+    revalidatePath("/admin/products");
+
+    return {
+      success: true,
+      message: "Producto actualizado correctamente.",
+    };
+  } catch (error) {
+    return { success: false, message: formatError(error) };
+  }
 }
 
 //Obtener todas las categorias.
-export async function getAllCategories(){
+export async function getAllCategories() {
   const data = await prisma.product.groupBy({
-    by:['category'],
-    _count: true
+    by: ["category"],
+    _count: true,
   });
 
   return data;
 }
 
 //Obtener productos destacados.
-export async function getFeaturedProducts(){
+export async function getFeaturedProducts() {
   const data = await prisma.product.findMany({
-    where:{isFeatured:true},
-    orderBy: {createdAt: 'desc'},
-    take: 4
+    where: { isFeatured: true },
+    orderBy: { createdAt: "desc" },
+    take: 4,
   });
 
   return convertToPlainObject(data);
