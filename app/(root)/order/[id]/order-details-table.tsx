@@ -35,7 +35,7 @@ const OrderDetailsTable = ({
   paypalClientId,
   isAdmin,
 }: {
-  order: Order;
+  order: Omit<Order, 'paymentResult'>;
   paypalClientId: string;
   isAdmin: boolean;
 }) => {
@@ -196,7 +196,7 @@ const OrderDetailsTable = ({
                         <span className="px-2">{item.qty}</span>
                       </TableCell>
                       <TableCell className="text-right">
-                        ${item.price}
+                        ${Number(item.price) * item.qty}
                       </TableCell>
                     </TableRow>
                   ))}
