@@ -7,8 +7,6 @@ import CredentialsSignInForm from "./credentials-sign-in-form";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 
-
-
 export const metadata: Metadata = {
     title: 'Sign in',
 };

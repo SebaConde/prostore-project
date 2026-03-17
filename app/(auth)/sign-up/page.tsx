@@ -14,7 +14,6 @@ export const metadata: Metadata = {
 const SignUpPage = async (props: {
     searchParams: Promise<{
         callbackUrl: string;
-
     }>
 }) => {
     const {callbackUrl} = await props.searchParams;
